@@ -112,14 +112,9 @@
             <version>${hystrix.configurator.version}</version>
         </dependency>
         <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-api</artifactId>
-            <version>${opentracing.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-util</artifactId>
-            <version>${opentracing.version}</version>
+            <groupId>io.appform.opentracing.annotations</groupId>
+            <artifactId>opentracing-annotations</artifactId>
+            <version>1.0.4</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

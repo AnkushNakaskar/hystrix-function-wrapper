@@ -19,13 +19,12 @@ package io.appform.core.hystrix;
 import com.hystrix.configurator.core.HystrixConfigurationFactory;
 import com.netflix.hystrix.HystrixCommand;
 import com.netflix.hystrix.HystrixCommandProperties;
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
-import java.util.Map;
-
+import io.appform.opentracing.FunctionData;
+import io.appform.opentracing.util.TracerUtil;
 import lombok.Getter;
 import org.slf4j.MDC;
+
+import java.util.Map;
 
 /**
  * Command that returns the single element
@@ -50,8 +49,6 @@ public class GenericHystrixCommand<R> {
 
     public HystrixCommand<R> executor(HandlerAdapter<R> function) {
         final Map parentMDCContext = MDC.getCopyOfContextMap();
-        final Tracer tracer = TracingHandler.getTracer();
-        final Span parentActiveSpan = TracingHandler.getParentActiveSpan(tracer);
         final HystrixCommand.Setter setter = HystrixConfigurationFactory.getCommandConfiguration(commandKey(group, command));
         return new HystrixCommand<R>(setter) {
             @Override
@@ -59,14 +56,12 @@ public class GenericHystrixCommand<R> {
                 if (parentMDCContext != null) {
                     MDC.setContextMap(parentMDCContext);
                 }
-                final Span span = TracingHandler.startChildSpan(tracer, parentActiveSpan, command);
-                final Scope scope = TracingHandler.activateSpan(tracer, span);
-
+                TracerUtil.startNewSpanWithMDCTracing(new FunctionData("hystrix","hystrix.command:"+command));
                 MDC.put(TRACE_ID, traceId);
                 try {
                     return function.run();
                 } finally {
-                    TracingHandler.closeScopeAndSpan(span, scope);
+                    TracerUtil.destroyTracingForCurrentThread();
                     HystrixCommandProperties.ExecutionIsolationStrategy isolationStrategy =
                             getProperties().executionIsolationStrategy().get();
                     if (isolationStrategy == HystrixCommandProperties.ExecutionIsolationStrategy.SEMAPHORE) {
